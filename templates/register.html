@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Register | Valley Auto Parts{% endblock %}
+
+{% block content %}
+
+<div class="w-full flex justify-center">
+  <section class="auth-card w-full max-w-sm bg-white rounded-xl shadow-xl border border-slate-200 p-6">
+
+    <h2 class="text-xl font-semibold text-slate-800 text-center">
+      Create Your Account
+    </h2>
+    <p class="helper text-center text-slate-500 text-sm mt-1">
+      Register to start building your auto parts cart.
+    </p>
+
+    {% if msg %}
+    <div
+      class="
+        msg
+        mt-4 text-center text-sm font-medium rounded-md px-3 py-2
+        {% if ok %}
+          bg-green-100 text-green-700 border border-green-300
+        {% else %}
+          bg-red-100 text-red-700 border border-red-300
+        {% endif %}
+      "
+    >
+      {{ msg }}
+    </div>
+    {% endif %}
+
+    <!-- Registration form POST request -->
+    <form id="registerForm" method="POST" class="mt-6 flex flex-col gap-4">
+
+      <div class="form-group flex flex-col">
+        <label for="username" class="text-sm font-medium text-slate-700 mb-1">
+          Username
+        </label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      <div class="form-group flex flex-col">
+        <label for="email" class="text-sm font-medium text-slate-700 mb-1">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      <div class="form-group flex flex-col">
+        <label for="password" class="text-sm font-medium text-slate-700 mb-1">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      <button
+        class="auth-btn w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-md py-2 transition"
+        type="submit"
+      >
+        Sign Up
+      </button>
+    </form>
+
+    <div class="small-link text-center text-xs text-slate-600 mt-4">
+      Already registered?
+      <a
+        href="{{ url_for('login') }}"
+        class="text-blue-600 hover:text-blue-700 font-medium"
+      >
+        Log in
+      </a>
+    </div>
+
+  </section>
+</div>
+
+{% endblock %}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+
+  <title>{% block title %}Valley Auto Parts{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind light gray theme -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            shopbg: '#0f172a',      // dark slate
+            cardbg: '#1e293b',      // slightly lighter slate
+            accent: '#4ade80',      // success green
+            borderdim: '#334155',   // muted border
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Js for later pages we need to add -->
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+
+<body class="bg-slate-100 min-h-screen flex flex-col">
+
+  <!-- navbar for all pages -->
+  <nav class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+      <!-- left side name of site and nav links -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+        <!-- name of the site -->
+        <a href="{{ url_for('shop') }}" class="text-lg font-semibold tracking-wide">
+          Valley Auto Parts
+        </a>
+
+        <!-- nav links -->
+        <div class="flex gap-4 text-sm text-slate-300">
+          <a
+            href="{{ url_for('shop') }}"
+            class="hover:text-white {% if request.path == '/' %}text-white font-medium{% endif %}"
+          >
+            Shop
+          </a>
+          <a
+            href="{{ url_for('login') }}"
+            class="hover:text-white {% if request.path == '/login' %}text-white font-medium{% endif %}"
+          >
+            Login
+          </a>
+          <a
+            href="{{ url_for('register') }}"
+            class="hover:text-white {% if request.path == '/register' %}text-white font-medium{% endif %}"
+          >
+            Register
+          </a>
+
+          {# future:
+          <a href="/cart" class="hover:text-white">Cart</a>
+          <a href="/orders" class="hover:text-white">Orders</a>
+          #}
+        </div>
+      </div>
+
+      <!-- user session area -->
+      <div class="flex items-center gap-3 text-sm">
+        {% if logged_in %}
+          <span class="text-accent text-xs font-medium">
+            Hi, {{ username }}
+          </span>
+          <a
+            href="{{ url_for('logout') }}"
+            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+          >
+            Log out
+          </a>
+        {% else %}
+          <a
+            href="{{ url_for('login') }}"
+            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+          >
+            Log in
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- main content for each page -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>
