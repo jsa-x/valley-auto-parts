@@ -42,29 +42,45 @@
 
         <!-- nav links -->
         <div class="flex gap-4 text-sm text-slate-300">
+          <!-- Shop -->
           <a
             href="{{ url_for('shop') }}"
             class="hover:text-white {% if request.path == '/' %}text-white font-medium{% endif %}"
           >
             Shop
           </a>
+
+          <!-- Cart -->
+          <a
+            href="{{ url_for('cart') }}"
+            class="hover:text-white {% if request.path == '/cart' %}text-white font-medium{% endif %}"
+          >
+            Cart
+          </a>
+
+          <!-- Orders -->
+          <a
+            href="{{ url_for('orders') }}"
+            class="hover:text-white {% if request.path == '/orders' %}text-white font-medium{% endif %}"
+          >
+            Orders
+          </a>
+
+          <!-- Login -->
           <a
             href="{{ url_for('login') }}"
             class="hover:text-white {% if request.path == '/login' %}text-white font-medium{% endif %}"
           >
             Login
           </a>
+
+          <!-- Register -->
           <a
             href="{{ url_for('register') }}"
             class="hover:text-white {% if request.path == '/register' %}text-white font-medium{% endif %}"
           >
             Register
           </a>
-
-          {# future:
-          <a href="/cart" class="hover:text-white">Cart</a>
-          <a href="/orders" class="hover:text-white">Orders</a>
-          #}
         </div>
       </div>
 

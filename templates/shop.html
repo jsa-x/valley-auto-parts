@@ -15,7 +15,7 @@
   {% endif %}
 
   <!-- welcome text -->
-  <header class="page-header mb-6">
+  <header class="page-header mb-4">
     <h1 class="text-xl font-semibold text-slate-800">
       Auto Parts Currently In Stock
     </h1>
@@ -26,83 +26,55 @@
       </p>
     {% else %}
       <p class="text-slate-600 text-sm mt-1">
-        Brakes, filters, and more log in to start adding items.
+        Brakes, filters, and more — log in to start adding items.
       </p>
     {% endif %}
   </header>
 
-  <!-- products grid -->
-  <section
-    id="productsContainer"
-    class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-  >
-    {% for part in parts %}
+  <!-- vehicle selector, search and count -->
+  <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
-    <!-- card for each part -->
-    <div class="product-card bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
-
-      <!-- image -->
-      <div class="product-img-wrap bg-slate-200">
-        <img
-          class="product-img w-full h-44 object-cover"
-          src="{{ part.img }}"
-          alt="{{ part.name }}"
-        >
-      </div>
-
-      <!-- info section -->
-      <div class="product-info flex flex-col p-4 flex-1">
-
-        <!-- category badge -->
-        <div class="product-format mb-2">
-          <span class="inline-block bg-slate-800 text-white text-[0.7rem] font-medium rounded px-2 py-1">
-            {{ part.category }}
-          </span>
-        </div>
-
-        <!-- part name -->
-        <div class="product-title text-slate-900 font-semibold text-sm leading-snug">
-          {{ part.name }}
-        </div>
-
-        <!-- fitment -->
-        <div class="product-fitment text-[0.8rem] text-slate-600 mt-1">
-          {{ part.fitment }}
-        </div>
-
-        <!-- description -->
-        <div class="product-desc text-[0.8rem] text-slate-500 mt-3 flex-1">
-          {{ part.description }}
-        </div>
-
-        <!-- bottom row price andbutton -->
-        <div class="product-bottom flex items-center justify-between border-t border-slate-200 mt-4 pt-3">
-          <div class="product-price text-slate-900 font-semibold text-sm">
-            ${{ '%.2f'|format(part.price) }}
-          </div>
-
-          {% if logged_in %}
-            <button
-              class="add-btn bg-blue-600 hover:bg-blue-700 text-white text-[0.75rem] font-semibold rounded-md px-3 py-1.5 transition"
-              data-id="{{ part.id }}"
-            >
-              Add to Cart
-            </button>
-          {% else %}
-            <button
-              class="add-btn bg-slate-400 text-white text-[0.75rem] font-semibold rounded-md px-3 py-1.5 cursor-not-allowed"
-              disabled
-            >
-              Login to buy
-            </button>
-          {% endif %}
-        </div>
-      </div>
+    <!-- vehicle dropdown -->
+    <div class="flex items-center gap-2">
+      <label for="vehicleSelect" class="text-xs text-slate-600 whitespace-nowrap">
+        Vehicle:
+      </label>
+      <select
+        id="vehicleSelect"
+        class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+        <option value="">All vehicles</option>
+        <option value="2010 Honda Civic">2010 Honda Civic</option>
+        <option value="2015 Toyota Corolla">2015 Toyota Corolla</option>
+        <option value="2012 Ford F-150">2012 Ford F-150</option>
+        <option value="2014 Chevy Silverado">2014 Chevy Silverado</option>
+        <option value="2016 Nissan Altima">2016 Nissan Altima</option>
+      </select>
     </div>
 
-    {% endfor %}
-  </section>
+    <!-- search and count -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+      <input
+        id="search"
+        type="search"
+        placeholder="Search parts…"
+        class="w-full sm:w-72 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+      <p id="count" class="text-xs text-slate-500"></p>
+    </div>
+  </div>
+
+  <!-- Where products will be rendered by JavaScript -->
+  <div
+    id="list"
+    class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+  ></div>
 
 </div>
+
+<!-- Pass product data from Flask to JS -->
+<script>
+  window.PRODUCTS = {{ parts | tojson }};
+</script>
 
 {% endblock %}
