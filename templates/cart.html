@@ -51,7 +51,18 @@
               </td>
               <td class="py-2 text-center text-sm">{{ item.qty }}</td>
               <td class="py-2 text-right text-sm">${{ '%.2f'|format(item.unit_price) }}</td>
-              <td class="py-2 text-right text-sm">${{ '%.2f'|format(item.line_total) }}</td>
+              <td class="py-2 text-right text-sm flex items-center justify-end gap-3">
+                <span>${{ '%.2f'|format(item.line_total) }}</span>
+                <form method="POST" action="{{ url_for('cart_remove') }}">
+                  <input type="hidden" name="pid" value="{{ item.id }}">
+                  <button
+                    type="submit"
+                    class="text-xs text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </form>
+              </td>
             </tr>
             {% endfor %}
           </tbody>

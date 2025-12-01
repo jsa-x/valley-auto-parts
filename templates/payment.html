@@ -8,7 +8,15 @@
     Payment
   </h1>
 
-  <form method="POST" action="{{ url_for('payment_submit') }}" class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 text-sm text-slate-700">
+  <div class="rounded-md border {{ 'border-green-300 bg-green-50 text-green-800' if stripe_on else 'border-amber-300 bg-amber-50 text-amber-800' }} text-xs px-3 py-2">
+    {% if stripe_on %}
+      Stripe Checkout (test mode) is active. You’ll be redirected to Stripe to enter card details.
+    {% else %}
+      Stripe is not configured. Set <code class="font-mono">STRIPE_SECRET_KEY</code> in the environment to enable checkout.
+    {% endif %}
+  </div>
+
+  <form method="POST" action="{{ url_for('payment_checkout') }}" class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 text-sm text-slate-700">
     <div class="grid gap-6 md:grid-cols-2">
       <!-- Order summary -->
       <div>
@@ -65,57 +73,19 @@
         </div>
 
         <div>
-          <h2 class="font-semibold text-slate-800 mb-2 text-sm">Payment details (mock)</h2>
+          <h2 class="font-semibold text-slate-800 mb-2 text-sm">Payment</h2>
           <p class="text-xs text-slate-500 mb-3">
-            This simulates where Stripe would be called. No real card data is sent.
+            You’ll be redirected to Stripe Checkout to enter card details and complete payment.
           </p>
-          <div class="space-y-2">
-            <input
-              name="card_brand"
-              type="text"
-              placeholder="Card brand (Visa, MasterCard)"
-              value="{{ (user.card_brand if user else '') or '' }}"
-              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-            <input
-              name="card_number"
-              type="text"
-              placeholder="4242 4242 4242 4242"
-              required
-              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-            <div class="flex gap-2">
-              <input
-                name="card_exp"
-                type="text"
-                placeholder="12/34"
-                value="{{ (user.card_exp if user else '') or '' }}"
-                required
-                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-              <input
-                name="card_cvc"
-                type="text"
-                placeholder="123"
-                required
-                class="w-24 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <input id="save_card" name="save_card" type="checkbox" class="h-4 w-4 text-blue-600 border-slate-300 rounded">
-              <label for="save_card" class="text-xs text-slate-600">
-                Save card brand/last4/exp to my profile
-              </label>
-            </div>
-          </div>
         </div>
 
         <div>
           <button
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-md px-4 py-2 transition"
+            class="w-full {{ 'bg-green-600 hover:bg-green-700' if stripe_on else 'bg-slate-400 cursor-not-allowed' }} text-white text-sm font-semibold rounded-md px-4 py-2 transition"
             type="submit"
+            {% if not stripe_on %}disabled{% endif %}
           >
-            Pay Now
+            Pay with Stripe Checkout
           </button>
         </div>
       </div>

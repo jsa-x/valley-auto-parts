@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
 import secrets
+from dotenv import load_dotenv
+import stripe
 
 # -------------------------------------------------
 # SQLite configuration (single DB for users+products)
@@ -182,6 +184,7 @@ def init_orders_table():
             total REAL NOT NULL,
             card_brand TEXT,
             card_last4 TEXT,
+            stripe_pid TEXT,
             shipping_name TEXT,
             shipping_line1 TEXT,
             shipping_line2 TEXT,
@@ -212,6 +215,7 @@ def init_orders_table():
     for col, col_type in [
         ("card_brand", "TEXT"),
         ("card_last4", "TEXT"),
+        ("stripe_pid", "TEXT"),
         ("shipping_name", "TEXT"),
         ("shipping_line1", "TEXT"),
         ("shipping_line2", "TEXT"),
@@ -304,12 +308,19 @@ def get_product_by_id(pid: str):
 # -------------------------------------------------
 cart_db = {}        # {username: [product_id, product_id, ...]}
 
+# Load environment variables from .env if present (explicit path to project root)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
 # -------------------------------------------------
 # Flask app setup
 # -------------------------------------------------
 app = Flask(__name__)
 app.secret_key = "valleyautoparts_secret_key"
 app.permanent_session_lifetime = timedelta(days=1)
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+if stripe and STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
 # Initialize tables on startup
 init_products_table()
@@ -474,8 +485,18 @@ def add_item_to_cart(username: str, pid: str):
     return True
 
 
-def create_order(username: str, item_ids, shipping=None, card_info=None):
-    """Persist an order to the database and return the created order dict."""
+def remove_item_from_cart(username: str, pid: str):
+    """Remove all instances of a product ID from the user's cart."""
+    cart = user_cart(username)
+    if not cart:
+        return False
+    new_cart = [item for item in cart if item != pid]
+    cart_db[username] = new_cart
+    return len(new_cart) != len(cart)
+
+
+def build_order_lines(item_ids):
+    """Return (items, total) for given product IDs."""
     counts = Counter(item_ids)
     order_items = []
     total = 0.0
@@ -498,8 +519,14 @@ def create_order(username: str, item_ids, shipping=None, card_info=None):
         )
 
     if not order_items:
-        return None
+        return [], 0.0
 
+    return order_items, round(total, 2)
+
+
+def create_order(username: str, item_ids, shipping=None, card_info=None, stripe_pid=None):
+    """Persist an order to the database and return the created order dict."""
+    order_items, total = build_order_lines(item_ids)
     if not order_items:
         return None
 
@@ -512,18 +539,19 @@ def create_order(username: str, item_ids, shipping=None, card_info=None):
         """
         INSERT INTO orders (
             username, created_at, total,
-            card_brand, card_last4,
+            card_brand, card_last4, stripe_pid,
             shipping_name, shipping_line1, shipping_line2,
             shipping_city, shipping_state, shipping_zip
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             username,
             created_at,
-            round(total, 2),
+            total,
             card_info.get("brand"),
             card_info.get("last4"),
+            stripe_pid,
             shipping.get("name"),
             shipping.get("line1"),
             shipping.get("line2"),
@@ -557,9 +585,10 @@ def create_order(username: str, item_ids, shipping=None, card_info=None):
         "order_id": order_id,
         "created_at": created_at,
         "items": order_items,
-        "total": round(total, 2),
+        "total": total,
         "card_brand": card_info.get("brand"),
         "card_last4": card_info.get("last4"),
+        "stripe_pid": stripe_pid,
         "shipping": {
             "name": shipping.get("name"),
             "line1": shipping.get("line1"),
@@ -570,6 +599,77 @@ def create_order(username: str, item_ids, shipping=None, card_info=None):
         },
     }
 
+def stripe_enabled():
+    return bool(stripe and STRIPE_SECRET_KEY)
+
+
+def create_stripe_payment_intent(amount_cents, shipping, username):
+    """Create a Stripe PaymentIntent using a test payment method."""
+    if not stripe_enabled():
+        return (None, None)
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=int(amount_cents),
+            currency="usd",
+            description=f"Order for {username}",
+            payment_method="pm_card_visa",  # Stripe test payment method
+            confirm=True,
+            shipping={
+                "name": shipping.get("name") or username,
+                "address": {
+                    "line1": shipping.get("line1") or "123 Test St",
+                    "line2": shipping.get("line2") or "",
+                    "city": shipping.get("city") or "Test City",
+                    "state": shipping.get("state") or "CA",
+                    "postal_code": shipping.get("zip") or "00000",
+                    "country": "US",
+                },
+            },
+        )
+        return (intent["id"], None)
+    except Exception as e:
+        return (None, str(e))
+
+
+def create_stripe_checkout_session(username, item_ids, shipping):
+    """Create a Stripe Checkout Session to show hosted payment page."""
+    if not stripe_enabled():
+        return (None, "Stripe not configured")
+
+    order_items, total = build_order_lines(item_ids)
+    if not order_items:
+        return (None, "Cart is empty")
+
+    line_items = []
+    for item in order_items:
+        line_items.append(
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {"name": item["name"]},
+                    "unit_amount": int(item["unit_price"] * 100),
+                },
+                "quantity": item["qty"],
+            }
+        )
+
+    try:
+        session_obj = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=line_items,
+            success_url=url_for("payment_success", _external=True, _scheme="http") + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=url_for("payment", _external=True, _scheme="http"),
+            shipping_address_collection={"allowed_countries": ["US"]},
+            metadata={
+                "username": username,
+                "cart_items": ",".join(item_ids),
+            },
+        )
+        return (session_obj.url, None)
+    except Exception as e:
+        return (None, str(e))
+
 
 def fetch_orders(username: str):
     """Return all orders (with items) for a user, newest first."""
@@ -577,7 +677,7 @@ def fetch_orders(username: str):
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT id, created_at, total, card_brand, card_last4,
+        SELECT id, created_at, total, card_brand, card_last4, stripe_pid,
                shipping_name, shipping_line1, shipping_line2,
                shipping_city, shipping_state, shipping_zip
         FROM orders
@@ -616,6 +716,7 @@ def fetch_orders(username: str):
                 "total": order["total"],
                 "card_brand": order["card_brand"],
                 "card_last4": order["card_last4"],
+                "stripe_pid": order["stripe_pid"],
                 "shipping": {
                     "name": order["shipping_name"],
                     "line1": order["shipping_line1"],
@@ -996,11 +1097,74 @@ def payment():
         items=items,
         total=round(total, 2),
         user=user,
+        stripe_on=stripe_enabled(),
     )
 
 
 @app.route("/payment", methods=["POST"])
 def payment_submit():
+    # Legacy endpoint now delegates to Stripe Checkout-only flow
+    return payment_checkout()
+
+
+@app.route("/payment/success")
+def payment_success():
+    username = session.get("username")
+    session_id = request.args.get("session_id")
+    if not username or not session_id or not stripe_enabled():
+        return redirect(url_for("orders"))
+
+    try:
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        payment_intent_id = checkout_session.get("payment_intent")
+        cart_items_meta = checkout_session.get("metadata", {}).get("cart_items", "")
+        cart_items = [pid for pid in cart_items_meta.split(",") if pid]
+
+        brand = None
+        last4 = None
+        if payment_intent_id:
+            pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+            if pi.charges and pi.charges.data:
+                charge = pi.charges.data[0]
+                pm_details = charge.get("payment_method_details", {}).get("card", {})
+                brand = pm_details.get("brand")
+                last4 = pm_details.get("last4")
+        shipping_details = checkout_session.get("shipping") or {}
+        ship_addr = (shipping_details.get("address") or {})
+
+        if cart_items:
+            order = create_order(
+                username,
+                cart_items,
+                shipping={
+                    "name": shipping_details.get("name"),
+                    "line1": ship_addr.get("line1"),
+                    "line2": ship_addr.get("line2"),
+                    "city": ship_addr.get("city"),
+                    "state": ship_addr.get("state"),
+                    "zip": ship_addr.get("postal_code"),
+                },
+                card_info={
+                    "brand": brand,
+                    "last4": last4,
+                },
+                stripe_pid=checkout_session.get("payment_intent"),
+            )
+            if order:
+                cart_db[username] = []  # clear cart
+                session["order_flash"] = f"Order #{order['order_id']} placed successfully."
+    except Exception:
+        return redirect(url_for("orders"))
+
+    return render_template(
+        "payment_success.html",
+        logged_in=True,
+        username=username,
+    )
+
+
+@app.route("/payment/checkout", methods=["POST"])
+def payment_checkout():
     username = session.get("username")
     if not username:
         return redirect(url_for("login"))
@@ -1010,7 +1174,7 @@ def payment_submit():
         session["cart_flash"] = "Your cart is empty. Add items before paying."
         return redirect(url_for("cart"))
 
-    # Shipping info
+    # Shipping info (required for checkout session)
     ship_name = request.form.get("ship_name", "").strip()
     ship_line1 = request.form.get("ship_line1", "").strip()
     ship_line2 = request.form.get("ship_line2", "").strip()
@@ -1018,37 +1182,18 @@ def payment_submit():
     ship_state = request.form.get("ship_state", "").strip()
     ship_zip = request.form.get("ship_zip", "").strip()
 
-    # Card info (mock)
-    card_brand = request.form.get("card_brand", "").strip()
-    card_number = "".join(ch for ch in request.form.get("card_number", "") if ch.isdigit())
-    card_exp = request.form.get("card_exp", "").strip()
-    card_cvc = request.form.get("card_cvc", "").strip()
-    save_card = request.form.get("save_card") == "on"
+    if not stripe_enabled():
+        session["cart_flash"] = "Stripe is not configured."
+        return redirect(url_for("payment"))
 
     if not (ship_name and ship_line1 and ship_city and ship_state and ship_zip):
         session["cart_flash"] = "Please provide a full shipping address."
         return redirect(url_for("payment"))
 
-    # Basic validation for card (mock)
-    if card_number and len(card_number) >= 4:
-        last4 = card_number[-4:]
-    else:
-        session["cart_flash"] = "Enter a card number to place the order."
-        return redirect(url_for("payment"))
-    if not card_exp:
-        session["cart_flash"] = "Enter a card expiration date."
-        return redirect(url_for("payment"))
-    if not card_cvc:
-        session["cart_flash"] = "Enter the CVC."
-        return redirect(url_for("payment"))
-
-    card_brand_use = card_brand or "Card"
-
-    # Persist order (with shipping + card summary)
-    order = create_order(
+    checkout_url, err = create_stripe_checkout_session(
         username,
         cart_items,
-        shipping={
+        {
             "name": ship_name,
             "line1": ship_line1,
             "line2": ship_line2,
@@ -1056,34 +1201,13 @@ def payment_submit():
             "state": ship_state,
             "zip": ship_zip,
         },
-        card_info={
-            "brand": card_brand_use,
-            "last4": last4,
-        },
     )
-    if not order:
-        session["cart_flash"] = "Unable to place order. Please update your cart and try again."
-        return redirect(url_for("cart"))
+    if err or not checkout_url:
+        session["cart_flash"] = "Stripe checkout failed: " + str(err)
+        return redirect(url_for("payment"))
 
-    # Optionally save card details to profile (brand/last4/exp only)
-    if save_card:
-        user = get_user(username)
-        if user:
-            update_user_profile(
-                username,
-                user.get("email", ""),
-                user.get("display_name") or username,
-                card_brand_use,
-                last4,
-                card_exp or user.get("card_exp"),
-                user.get("preferred_vehicle"),
-            )
-
-    # clear cart after placing order
-    cart_db[username] = []
-
-    session["order_flash"] = f"Order #{order['order_id']} placed successfully."
-    return redirect(url_for("orders"))
+    session["pending_cart_items"] = cart_items
+    return redirect(checkout_url, code=303)
 
 
 @app.route("/cart/add", methods=["POST"])
@@ -1099,6 +1223,21 @@ def cart_add():
     else:
         session["flash_msg"] = "Item added to your cart."
     return redirect(request.referrer or url_for("shop"))
+
+
+@app.route("/cart/remove", methods=["POST"])
+def cart_remove():
+    username = session.get("username")
+    if not username:
+        session["flash_msg"] = "Please log in to manage your cart."
+        return redirect(url_for("login"))
+
+    pid = request.form.get("pid", "").strip()
+    if pid and remove_item_from_cart(username, pid):
+        session["cart_flash"] = "Item removed from your cart."
+    else:
+        session["cart_flash"] = "Could not remove that item."
+    return redirect(url_for("cart"))
 
 
 @app.route("/cart/clear", methods=["POST"])
