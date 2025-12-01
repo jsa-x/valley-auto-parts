@@ -8,12 +8,119 @@
     Payment
   </h1>
 
-  <div
-    id="paymentRoot"
-    class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 text-sm text-slate-700"
-  >
-    Loading payment details...
-  </div>
+  <form method="POST" action="{{ url_for('payment_submit') }}" class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 text-sm text-slate-700">
+    <div class="grid gap-6 md:grid-cols-2">
+      <!-- Order summary -->
+      <div>
+        <h2 class="font-semibold text-slate-800 mb-2 text-sm">
+          Order Summary
+        </h2>
+        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-300 text-xs uppercase text-slate-500">
+                <th class="py-2 pr-4">Item</th>
+                <th class="py-2 text-center">Qty</th>
+                <th class="py-2 text-right">Price</th>
+                <th class="py-2 text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+              <tr class="border-b border-slate-200">
+                <td class="py-2 pr-4">
+                  <div class="font-medium text-slate-800 text-sm">{{ item.name }}</div>
+                  <div class="text-xs text-slate-500">{{ item.fitment }}</div>
+                </td>
+                <td class="py-2 text-center text-sm">{{ item.qty }}</td>
+                <td class="py-2 text-right text-sm">${{ '%.2f'|format(item.unit_price) }}</td>
+                <td class="py-2 text-right text-sm">${{ '%.2f'|format(item.line_total) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="flex justify-between items-center mt-3">
+          <span class="text-xs text-slate-500">Total</span>
+          <span class="text-lg font-semibold text-slate-900">
+            ${{ '%.2f'|format(total) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Shipping + payment form -->
+      <div class="space-y-4">
+        <div>
+          <h2 class="font-semibold text-slate-800 mb-2 text-sm">Shipping address</h2>
+          <div class="space-y-2">
+            <input name="ship_name" type="text" placeholder="Full name" required value="{{ (user.ship_name if user else '') or '' }}" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <input name="ship_line1" type="text" placeholder="Street address" required value="{{ (user.ship_line1 if user else '') or '' }}" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <input name="ship_line2" type="text" placeholder="Apt / Suite (optional)" value="{{ (user.ship_line2 if user else '') or '' }}" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="flex gap-2">
+              <input name="ship_city" type="text" placeholder="City" required value="{{ (user.ship_city if user else '') or '' }}" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <input name="ship_state" type="text" placeholder="State" required value="{{ (user.ship_state if user else '') or '' }}" class="w-24 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <input name="ship_zip" type="text" placeholder="ZIP" required value="{{ (user.ship_zip if user else '') or '' }}" class="w-28 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="font-semibold text-slate-800 mb-2 text-sm">Payment details (mock)</h2>
+          <p class="text-xs text-slate-500 mb-3">
+            This simulates where Stripe would be called. No real card data is sent.
+          </p>
+          <div class="space-y-2">
+            <input
+              name="card_brand"
+              type="text"
+              placeholder="Card brand (Visa, MasterCard)"
+              value="{{ (user.card_brand if user else '') or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <input
+              name="card_number"
+              type="text"
+              placeholder="4242 4242 4242 4242"
+              required
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <div class="flex gap-2">
+              <input
+                name="card_exp"
+                type="text"
+                placeholder="12/34"
+                value="{{ (user.card_exp if user else '') or '' }}"
+                required
+                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+              <input
+                name="card_cvc"
+                type="text"
+                placeholder="123"
+                required
+                class="w-24 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="save_card" name="save_card" type="checkbox" class="h-4 w-4 text-blue-600 border-slate-300 rounded">
+              <label for="save_card" class="text-xs text-slate-600">
+                Save card brand/last4/exp to my profile
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <button
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-md px-4 py-2 transition"
+            type="submit"
+          >
+            Pay Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 
 </div>
 {% endblock %}

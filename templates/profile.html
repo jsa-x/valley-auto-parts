@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Profile | Valley Auto Parts{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <h1 class="text-xl font-semibold text-slate-800 mb-4">
+    Your Profile
+  </h1>
+
+  {% if msg %}
+  <div
+    class="mb-4 rounded-md border text-sm font-medium px-4 py-2 text-center shadow
+      {% if ok %}
+        border-green-300 bg-green-100 text-green-700
+      {% else %}
+        border-amber-300 bg-amber-50 text-amber-800
+      {% endif %}
+    "
+  >
+    {{ msg }}
+  </div>
+  {% endif %}
+
+  <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 text-sm text-slate-700 space-y-4">
+    <form method="POST" class="space-y-4">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="display_name" class="block text-xs text-slate-600 mb-1">
+            Display name
+          </label>
+          <input
+            id="display_name"
+            name="display_name"
+            type="text"
+            value="{{ user.display_name or username }}"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+        </div>
+        <div>
+          <label for="email" class="block text-xs text-slate-600 mb-1">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            value="{{ user.email }}"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="card_brand" class="block text-xs text-slate-600 mb-1">
+            Preferred card brand
+          </label>
+          <input
+            id="card_brand"
+            name="card_brand"
+            type="text"
+            placeholder="Visa, MasterCard, etc."
+            value="{{ user.card_brand or '' }}"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+        </div>
+        <div>
+          <label for="card_last4" class="block text-xs text-slate-600 mb-1">Preferred card last 4</label>
+          <div class="grid grid-cols-2 gap-2">
+            <input
+              id="card_last4"
+              name="card_last4"
+              type="text"
+              maxlength="4"
+              inputmode="numeric"
+              pattern="[0-9]{4}"
+              placeholder="1234"
+              value="{{ user.card_last4 or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <input
+              id="card_exp"
+              name="card_exp"
+              type="text"
+              placeholder="12/34"
+              value="{{ user.card_exp or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+          <p class="text-xs text-slate-500 mt-1">
+            Stored for display only (no real payment processing).
+          </p>
+        </div>
+        <div>
+          <label for="preferred_vehicle" class="block text-xs text-slate-600 mb-1">
+            Preferred vehicle
+          </label>
+          <select
+            id="preferred_vehicle"
+            name="preferred_vehicle"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">No preference</option>
+            {% for v in vehicle_options %}
+              <option value="{{ v }}" {% if user.preferred_vehicle == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+          <p class="text-xs text-slate-500 mt-1">
+            Used to prefill searches and fitment suggestions.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-slate-800 mb-2">Saved shipping address</h3>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <input
+              id="ship_name"
+              name="ship_name"
+              type="text"
+              placeholder="Full name"
+              value="{{ user.ship_name or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+          <div class="sm:col-span-2">
+            <input
+              id="ship_line1"
+              name="ship_line1"
+              type="text"
+              placeholder="Street address"
+              value="{{ user.ship_line1 or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+          <div class="sm:col-span-2">
+            <input
+              id="ship_line2"
+              name="ship_line2"
+              type="text"
+              placeholder="Apt / Suite (optional)"
+              value="{{ user.ship_line2 or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+          <div>
+            <input
+              id="ship_city"
+              name="ship_city"
+              type="text"
+              placeholder="City"
+              value="{{ user.ship_city or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+          <div>
+            <input
+              id="ship_state"
+              name="ship_state"
+              type="text"
+              placeholder="State"
+              value="{{ user.ship_state or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+          <div>
+            <input
+              id="ship_zip"
+              name="ship_zip"
+              type="text"
+              placeholder="ZIP"
+              value="{{ user.ship_zip or '' }}"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-2">
+          Used to prefill checkout shipping details.
+        </p>
+      </div>
+
+      <div class="border border-slate-200 rounded-md px-3 py-3 text-xs text-slate-600 bg-slate-50">
+        <p class="font-semibold text-slate-700 mb-1">Account</p>
+        <p>Username: <span class="font-medium text-slate-800">{{ username }}</span></p>
+        <p>Signed in: <span class="font-medium text-slate-800">Yes</span></p>
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-md px-4 py-2 transition"
+        >
+          Save changes
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

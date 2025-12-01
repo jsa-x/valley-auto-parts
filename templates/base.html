@@ -65,22 +65,15 @@
           >
             Orders
           </a>
-
-          <!-- Login -->
+          {% if logged_in %}
+          <!-- Profile -->
           <a
-            href="{{ url_for('login') }}"
-            class="hover:text-white {% if request.path == '/login' %}text-white font-medium{% endif %}"
+            href="{{ url_for('profile') }}"
+            class="hover:text-white {% if request.path == '/profile' %}text-white font-medium{% endif %}"
           >
-            Login
+            Profile
           </a>
-
-          <!-- Register -->
-          <a
-            href="{{ url_for('register') }}"
-            class="hover:text-white {% if request.path == '/register' %}text-white font-medium{% endif %}"
-          >
-            Register
-          </a>
+          {% endif %}
         </div>
       </div>
 
@@ -88,8 +81,14 @@
       <div class="flex items-center gap-3 text-sm">
         {% if logged_in %}
           <span class="text-accent text-xs font-medium">
-            Hi, {{ username }}
+            Hi, {{ nav_display_name or username }}
           </span>
+          <a
+            href="{{ url_for('profile') }}"
+            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+          >
+            Profile
+          </a>
           <a
             href="{{ url_for('logout') }}"
             class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
@@ -97,12 +96,20 @@
             Log out
           </a>
         {% else %}
-          <a
-            href="{{ url_for('login') }}"
-            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
-          >
-            Log in
-          </a>
+          <div class="flex items-center gap-2">
+            <a
+              href="{{ url_for('login') }}"
+              class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+            >
+              Log in
+            </a>
+            <a
+              href="{{ url_for('register') }}"
+              class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+            >
+              Register
+            </a>
+          </div>
         {% endif %}
       </div>
     </div>

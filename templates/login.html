@@ -70,14 +70,24 @@
     </form>
 
     <!-- link under form -->
-    <div class="small-link text-center text-xs text-slate-600 mt-4">
-      New customer?
-      <a
-        href="{{ url_for('register') }}"
-        class="text-blue-600 hover:text-blue-700 font-medium"
-      >
-        Create account
-      </a>
+    <div class="small-link text-center text-xs text-slate-600 mt-4 space-y-1">
+      <div>
+        New customer?
+        <a
+          href="{{ url_for('register') }}"
+          class="text-blue-600 hover:text-blue-700 font-medium"
+        >
+          Create account
+        </a>
+      </div>
+      <div>
+        <a
+          href="{{ url_for('reset_request') }}"
+          class="text-blue-600 hover:text-blue-700 font-medium"
+        >
+          Forgot password?
+        </a>
+      </div>
     </div>
 
   </section>
