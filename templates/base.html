@@ -40,7 +40,7 @@
           Valley Auto Parts
         </a>
 
-        <!-- nav links -->
+        <!-- left nav links -->
         <div class="flex gap-4 text-sm text-slate-300">
           <!-- Shop -->
           <a
@@ -49,46 +49,33 @@
           >
             Shop
           </a>
+        </div>
+      </div>
 
-          <!-- Cart -->
+      <!-- right nav area -->
+      <div class="flex items-center gap-3 text-sm">
+        {% if logged_in %}
           <a
             href="{{ url_for('cart') }}"
             class="hover:text-white {% if request.path == '/cart' %}text-white font-medium{% endif %}"
           >
             Cart
           </a>
-
-          <!-- Orders -->
           <a
             href="{{ url_for('orders') }}"
             class="hover:text-white {% if request.path == '/orders' %}text-white font-medium{% endif %}"
           >
             Orders
           </a>
-          {% if logged_in %}
-          <!-- Profile -->
           <a
             href="{{ url_for('profile') }}"
             class="hover:text-white {% if request.path == '/profile' %}text-white font-medium{% endif %}"
           >
             Profile
           </a>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- user session area -->
-      <div class="flex items-center gap-3 text-sm">
-        {% if logged_in %}
           <span class="text-accent text-xs font-medium">
             Hi, {{ nav_display_name or username }}
           </span>
-          <a
-            href="{{ url_for('profile') }}"
-            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
-          >
-            Profile
-          </a>
           <a
             href="{{ url_for('logout') }}"
             class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
@@ -96,20 +83,24 @@
             Log out
           </a>
         {% else %}
-          <div class="flex items-center gap-2">
-            <a
-              href="{{ url_for('login') }}"
-              class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
-            >
-              Log in
-            </a>
-            <a
-              href="{{ url_for('register') }}"
-              class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
-            >
-              Register
-            </a>
-          </div>
+          <a
+            href="{{ url_for('cart') }}"
+            class="hover:text-white {% if request.path == '/cart' %}text-white font-medium{% endif %}"
+          >
+            Cart
+          </a>
+          <a
+            href="{{ url_for('login') }}"
+            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+          >
+            Log in
+          </a>
+          <a
+            href="{{ url_for('register') }}"
+            class="border border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white text-xs font-medium rounded px-3 py-1 transition"
+          >
+            Register
+          </a>
         {% endif %}
       </div>
     </div>

@@ -78,9 +78,9 @@
     <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {% for p in parts %}
       <div class="product-card bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
-        <div class="product-img-wrap bg-slate-200">
+        <div class="product-img-wrap bg-white border-b border-slate-200 flex items-center justify-center p-3">
           <img
-            class="product-img w-full h-44 object-cover"
+            class="product-img w-full h-36 object-contain"
             src="{{ p.img }}"
             alt="{{ p.name }}"
           >

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import stripe
 
 # -------------------------------------------------
-# SQLite configuration (single DB for users+products)
+# SQLite configuration single DB for users+products
 # -------------------------------------------------
 DB_PATH = os.path.join(os.path.dirname(__file__), "store.db")
 
@@ -23,7 +23,7 @@ def get_db():
 
 
 # -------------------------------------------------
-# Seed products (used only if products table is empty)
+# Seed products used only if products table is empty
 # -------------------------------------------------
 VEHICLE_OPTIONS = [
     "2010 Honda Civic",
